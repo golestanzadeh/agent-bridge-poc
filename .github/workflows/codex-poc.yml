@@ -25,7 +25,7 @@ jobs:
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          permission-profile: ":workspace-write"
+          permission-profile: ":workspace"
           safety-strategy: "drop-sudo"
           prompt: |
             This is Agent Bridge PoC task ABP-0001.
@@ -45,7 +45,6 @@ jobs:
         run: python -m unittest -v
 
       - name: Commit Codex changes
-        id: commit
         shell: bash
         run: |
           if git diff --quiet; then
@@ -62,7 +61,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          CODEX_OUTPUT: ${{ steps.codex.outputs.final-output }}
+          CODEX_OUTPUT: ${{ steps.codex.outputs.final-message }}
         shell: bash
         run: |
           cat > /tmp/bridge-response.md <<'EOF'
