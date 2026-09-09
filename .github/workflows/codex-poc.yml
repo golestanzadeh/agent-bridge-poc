@@ -28,7 +28,7 @@ jobs:
           permission-profile: ":workspace"
           safety-strategy: "drop-sudo"
           prompt: |
-            This is Agent Bridge PoC task ABP-0001.
+            This is Agent Bridge PoC task PR-${{ github.event.pull_request.number }}.
             Read README.md and AGENTS.md first and obey AGENTS.md.
             Work only in this repository and on the current pull-request branch.
 
@@ -54,7 +54,7 @@ jobs:
           git config user.name "agent-bridge-codex"
           git config user.email "agent-bridge-codex@users.noreply.github.com"
           git add app.py test_app.py
-          git commit -m "test: apply Codex bridge task ABP-0001"
+          git commit -m "test: apply Codex bridge task PR-${{ github.event.pull_request.number }}"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
 
       - name: Report response to PR
@@ -64,10 +64,10 @@ jobs:
           CODEX_OUTPUT: ${{ steps.codex.outputs.final-message }}
         shell: bash
         run: |
-          cat > /tmp/bridge-response.md <<'EOF'
+          cat > /tmp/bridge-response.md <<EOF
           [AGENT_BRIDGE]
           protocol_version: 1
-          task_id: ABP-0001
+          task_id: PR-${PR_NUMBER}
           sender: codex
           recipient: work
           status: RESPONSE
