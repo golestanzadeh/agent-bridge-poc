@@ -1,0 +1,3 @@
+Agent Bridge PoC event trigger probe.
+
+This harmless file exists only to make the test branch differ from main so a pull request can be opened.
