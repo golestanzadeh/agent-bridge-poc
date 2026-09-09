@@ -1,4 +1,4 @@
-name: Agent Bridge App Comment Probe
+name: Agent Bridge User Comment Probe
 
 on:
   workflow_dispatch:
@@ -10,27 +10,20 @@ jobs:
   probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate GitHub App installation token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.AGENT_BRIDGE_APP_ID }}
-          private-key: ${{ secrets.AGENT_BRIDGE_PRIVATE_KEY }}
-
-      - name: Post Agent Bridge response as GitHub App
+      - name: Post Agent Bridge response as repository owner
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ secrets.AGENT_BRIDGE_USER_TOKEN }}
         shell: bash
         run: |
-          cat > /tmp/app-probe.md <<'EOF'
+          cat > /tmp/user-probe.md <<'EOF'
           [AGENT_BRIDGE]
           protocol_version: 1
-          task_id: PR-6-APP-PROBE
+          task_id: PR-6-USER-PROBE
           sender: codex
           recipient: work
           status: RESPONSE
 
           PASS
-          Tests: diagnostic only; no Codex/API call executed.
+          Tests: diagnostic only; user-token identity probe. No Codex/API call executed.
           EOF
-          gh pr comment 6 --repo golestanzadeh/agent-bridge-poc --body-file /tmp/app-probe.md
+          gh pr comment 6 --repo golestanzadeh/agent-bridge-poc --body-file /tmp/user-probe.md
