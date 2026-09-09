@@ -10,7 +10,10 @@ permissions:
 
 jobs:
   codex:
-    if: startsWith(github.event.pull_request.title, '[CODEX-BRIDGE]')
+    if: >
+      startsWith(github.event.pull_request.title, '[CODEX-BRIDGE]') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor == 'golestanzadeh'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR branch
@@ -59,7 +62,7 @@ jobs:
 
       - name: Report response to PR
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AGENT_BRIDGE_USER_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           CODEX_OUTPUT: ${{ steps.codex.outputs.final-message }}
         shell: bash
