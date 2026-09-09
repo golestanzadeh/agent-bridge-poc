@@ -1,0 +1,29 @@
+name: Codex PoC
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  codex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Run Codex smoke test
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          permission-profile: ":read-only"
+          safety-strategy: "drop-sudo"
+          prompt: |
+            Read README.md and AGENTS.md in this repository.
+            Do not modify any file.
+            Do not access any other repository.
+            Return exactly: CODEX_BRIDGE_PASS
