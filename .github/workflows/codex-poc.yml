@@ -1,29 +1,81 @@
-name: Codex PoC
+name: Codex Bridge PoC
 
 on:
-  workflow_dispatch:
+  pull_request:
+    types: [opened]
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
 
 jobs:
   codex:
+    if: startsWith(github.event.pull_request.title, '[CODEX-BRIDGE]')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v5
         with:
-          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
 
-      - name: Run Codex smoke test
+      - name: Run Codex bridge task
         id: codex
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          permission-profile: ":read-only"
+          permission-profile: ":workspace-write"
           safety-strategy: "drop-sudo"
           prompt: |
-            Read README.md and AGENTS.md in this repository.
-            Do not modify any file.
-            Do not access any other repository.
-            Return exactly: CODEX_BRIDGE_PASS
+            This is Agent Bridge PoC task ABP-0001.
+            Read README.md and AGENTS.md first and obey AGENTS.md.
+            Work only in this repository and on the current pull-request branch.
+
+            Task:
+            1. Add a new function multiply(a: int, b: int) -> int to app.py.
+            2. Add unit tests for positive and negative integer multiplication to test_app.py.
+            3. Run: python -m unittest -v
+            4. Do not modify any other application file.
+            5. Do not access any other repository.
+
+            Finish with a concise report containing exactly one completion state from AGENTS.md and the test result.
+
+      - name: Run verification tests
+        run: python -m unittest -v
+
+      - name: Commit Codex changes
+        id: commit
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes produced by Codex." >&2
+            exit 1
+          fi
+          git config user.name "agent-bridge-codex"
+          git config user.email "agent-bridge-codex@users.noreply.github.com"
+          git add app.py test_app.py
+          git commit -m "test: apply Codex bridge task ABP-0001"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+      - name: Report response to PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CODEX_OUTPUT: ${{ steps.codex.outputs.final-output }}
+        shell: bash
+        run: |
+          cat > /tmp/bridge-response.md <<'EOF'
+          [AGENT_BRIDGE]
+          protocol_version: 1
+          task_id: ABP-0001
+          sender: codex
+          recipient: work
+          status: RESPONSE
+
+          Codex execution completed and verification tests passed.
+          EOF
+          if [ -n "$CODEX_OUTPUT" ]; then
+            printf '\nCodex report:\n%s\n' "$CODEX_OUTPUT" >> /tmp/bridge-response.md
+          fi
+          gh pr comment "$PR_NUMBER" --body-file /tmp/bridge-response.md
